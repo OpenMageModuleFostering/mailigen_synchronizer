@@ -1,0 +1,16 @@
+{
+    "name": "OpenMageModuleFostering/Mailigen_Synchronizer",
+    "type": "magento-module",
+    "license": "GNU-General-Public-License-(GPL)",
+    "homepage": "",
+    "description": "Two-way sync between Magento email newsletter subscriber list and Mailigen email list",
+    "authors": [
+    {
+        "name": "Thomas Nelson",
+        "email": "info@mailigen.com"
+    }
+],
+    "suggest": {
+        "magento-hackathon/magento-composer-installer": "*"
+    }
+}
