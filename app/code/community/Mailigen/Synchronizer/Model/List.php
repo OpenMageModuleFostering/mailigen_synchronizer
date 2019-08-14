@@ -1,34 +1,105 @@
 <?php
-class Mailigen_Synchronizer_Model_List extends  Mage_Core_Model_Abstract {
 
-	public function _construct()
-	{
-		parent::_construct();
-		$this->_init('mailigen_synchronizer/list');
-	}
+/**
+ * Mailigen_Synchronizer
+ *
+ * @category    Mailigen
+ * @package     Mailigen_Synchronizer
+ * @author      Maksim Soldatjonok <maksold@gmail.com>
+ */
+class Mailigen_Synchronizer_Model_List extends Mage_Core_Model_Abstract
+{
+    /**
+     * @var null
+     */
+    protected $_lists = null;
 
-	 public function toOptionArray()
-     {
-	  
-		$mgapi 	= Mage::getModuleDir('','Mailigen_Synchronizer') . DS . 'api' . DS . 'MGAPI.class.php';
-		$apikey	= Mage::getStoreConfig('mailigen_settings/mailigen_general_group/mailigen_general_api_key');
-		require_once( $mgapi ); 
-		
-		$api = new MGAPI($apikey);
+    public function _construct()
+    {
+        parent::_construct();
+        $this->_init('mailigen_synchronizer/list');
+    }
 
-		$lists = $api->lists();
+    /**
+     * @param bool $load
+     * @return array|null
+     */
+    public function getLists($load = false)
+    {
+        if (is_null($this->_lists) || $load) {
+            $api = Mage::helper('mailigen_synchronizer')->getMailigenApi();
+            $this->_lists = $api->lists();
+        }
+        return $this->_lists;
+    }
 
-		//print_r($lists);
-			
-		if( !$api->errorCode && $lists){
-                    $array[] = array('label' => '--Create a new list--','value'=>'');
-                    foreach($lists as $list){
-                            $array[] = array('label'=>$list['name'],'value'=>$list['id']);
-                    }
-                    return $array;
-		
-		}
-		
-	   
-     }
+    /**
+     * @param bool $load
+     * @return array
+     */
+    public function toOptionArray($load = false)
+    {
+        $lists = $this->getLists($load);
+
+        if (is_array($lists) && !empty($lists)) {
+            $array[] = array('label' => '--Create a new list--', 'value' => '');
+            foreach ($lists as $list) {
+                $array[] = array('label' => $list['name'], 'value' => $list['id']);
+            }
+            return $array;
+        }
+    }
+
+    /**
+     * @param $newListName
+     * @return bool|string
+     */
+    public function createNewList($newListName)
+    {
+        //Get the list with current lists
+        $lists = $this->toOptionArray();
+
+        //Check if a similar list name doesn't exists already.
+        $continue = true;
+        foreach ($lists as $list) {
+            if ($list['label'] == $newListName) {
+                $continue = false;
+                Mage::getSingleton('adminhtml/session')->addError("A list with name '$newListName' already exists");
+                break;
+            }
+        }
+
+        //Only if a list with a similar name is not doesn't exists we move further.
+        if ($continue) {
+
+            /** @var $logger Mailigen_Synchronizer_Helper_Log */
+            $logger = Mage::helper('mailigen_synchronizer/log');
+
+            $options = array(
+                'permission_reminder' => ' ',
+                'notify_to' => Mage::getStoreConfig('trans_email/ident_general/email'),
+                'subscription_notify' => true,
+                'unsubscription_notify' => true,
+                'has_email_type_option' => true
+            );
+
+            $api = Mage::helper('mailigen_synchronizer')->getMailigenApi();
+            $retval = $api->listCreate($newListName, $options);
+
+            if ($api->errorCode) {
+                $logger->log("Unable to create list. $api->errorCode: $api->errorMessage");
+            }
+
+            //We grab the list one more time
+            $lists = $this->toOptionArray(true);
+            foreach ($lists as $list) {
+                if ($list['label'] == $newListName) {
+                    //We make the new submitted list default
+                    return $list['value'];
+                }
+            }
+        }
+
+        return false;
+    }
 }

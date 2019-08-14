@@ -1,16 +1,15 @@
-<?php 
+<?php
 
 class Mailigen_Synchronizer_Block_Newsletter_Subscriber_Grid extends Mage_Adminhtml_Block_Newsletter_Subscriber_Grid
 {
-	protected function _prepareLayout()
+    protected function _prepareLayout()
     {
-
         $this->setChild('sync_button',
             $this->getLayout()->createBlock('adminhtml/widget_button')
                 ->setData(array(
-                    'label'     => Mage::helper('adminhtml')->__('Bulk synchronize with Mailigen'),
-                    'onclick'   => "setLocation('{$this->getUrl('*/mailigen/sync')}')",
-                    'class'   => 'task'
+                    'label' => Mage::helper('adminhtml')->__('Bulk synchronize with Mailigen'),
+                    'onclick' => "setLocation('{$this->getUrl('*/mailigen/syncNewsletter')}')",
+                    'class' => 'task'
                 ))
         );
 
@@ -26,10 +25,10 @@ class Mailigen_Synchronizer_Block_Newsletter_Subscriber_Grid extends Mage_Adminh
     {
         $html = parent::getMainButtonsHtml();
 
-        $enabled = Mage::getStoreConfig('mailigen_settings/mailigen_general_group/mailigen_general_status');
+        $enabled = $this->helper('mailigen_synchronizer')->isEnabled();
 
-        if( $enabled ) {
-            $html.= $this->getSyncButtonHtml();
+        if ($enabled) {
+            $html .= $this->getSyncButtonHtml();
         }
 
         return $html;

@@ -3,7 +3,7 @@
     "type": "magento-module",
     "license": "GNU-General-Public-License-(GPL)",
     "homepage": "",
-    "description": "Two-way sync between Magento email newsletter subscriber list and Mailigen email list",
+    "description": "Two-way sync for Magneto newsletter subscribers and one-way sync for Magnento customers",
     "authors": [
     {
         "name": "Thomas Nelson",
