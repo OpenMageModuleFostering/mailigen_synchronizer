@@ -16,21 +16,36 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
     const XML_PATH_NEWSLETTER_AUTOSYNC = 'mailigen_synchronizer/newsletter/autosync';
     const XML_PATH_NEWSLETTER_HANDLE_DEFAULT_EMAILS = 'mailigen_synchronizer/newsletter/handle_default_emails';
     const XML_PATH_NEWSLETTER_WEBHOOKS = 'mailigen_synchronizer/newsletter/webhooks';
+    const XML_PATH_NEWSLETTER_WEBHOOKS_SECRET_KEY = 'mailigen_synchronizer/newsletter/webhooks_secret_key';
     const XML_PATH_CUSTOMERS_CONTACT_LIST = 'mailigen_synchronizer/customers/contact_list';
     const XML_PATH_CUSTOMERS_NEW_LIST_TITLE = 'mailigen_synchronizer/customers/new_list_title';
     const XML_PATH_CUSTOMERS_AUTOSYNC = 'mailigen_synchronizer/customers/autosync';
     const XML_PATH_SYNC_MANUAL = 'mailigen_synchronizer/sync/manual';
     const XML_PATH_SYNC_STOP = 'mailigen_synchronizer/sync/stop';
 
-    protected $_mgapi = null;
+    protected $_mgapi = array();
+    protected $_storeIds = null;
 
     /**
      * @param null $storeId
      * @return bool
+     * @todo Check, where this function is used
      */
     public function isEnabled($storeId = null)
     {
-        return Mage::getStoreConfigFlag(self::XML_PATH_ENABLED, $storeId);
+        if (is_null($storeId)) {
+            $storeIds = $this->getStoreIds();
+            if (count($storeIds) > 0) {
+                foreach ($storeIds as $_storeId) {
+                    if (Mage::getStoreConfigFlag(self::XML_PATH_ENABLED, $_storeId)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } else {
+            return Mage::getStoreConfigFlag(self::XML_PATH_ENABLED, $storeId);
+        }
     }
 
     /**
@@ -39,6 +54,7 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function getApiKey($storeId = null)
     {
+        $storeId = is_null($storeId) ? $this->getDefaultStoreId() : $storeId;
         return Mage::getStoreConfig(self::XML_PATH_API_KEY, $storeId);
     }
 
@@ -48,6 +64,7 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function getNewsletterContactList($storeId = null)
     {
+        $storeId = is_null($storeId) ? $this->getDefaultStoreId() : $storeId;
         return Mage::getStoreConfig(self::XML_PATH_NEWSLETTER_CONTACT_LIST, $storeId);
     }
 
@@ -57,7 +74,19 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function canAutoSyncNewsletter($storeId = null)
     {
-        return Mage::getStoreConfigFlag(self::XML_PATH_NEWSLETTER_AUTOSYNC, $storeId);
+        if (is_null($storeId)) {
+            $storeIds = $this->getStoreIds();
+            if (count($storeIds) > 0) {
+                foreach ($storeIds as $_storeId) {
+                    if (Mage::getStoreConfigFlag(self::XML_PATH_NEWSLETTER_AUTOSYNC, $_storeId)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } else {
+            return Mage::getStoreConfigFlag(self::XML_PATH_NEWSLETTER_AUTOSYNC, $storeId);
+        }
     }
 
     /**
@@ -66,6 +95,7 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function canNewsletterHandleDefaultEmails($storeId = null)
     {
+        $storeId = is_null($storeId) ? $this->getDefaultStoreId() : $storeId;
         return Mage::getStoreConfigFlag(self::XML_PATH_NEWSLETTER_HANDLE_DEFAULT_EMAILS, $storeId);
     }
 
@@ -75,7 +105,41 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function enabledWebhooks($storeId = null)
     {
+        $storeId = is_null($storeId) ? $this->getDefaultStoreId() : $storeId;
         return Mage::getStoreConfigFlag(self::XML_PATH_NEWSLETTER_WEBHOOKS, $storeId);
+    }
+
+    /**
+     * @param null $storeId
+     * @return mixed
+     */
+    public function getWebhooksSecretKey($storeId = null)
+    {
+        $storeId = is_null($storeId) ? $this->getDefaultStoreId() : $storeId;
+        return Mage::getStoreConfig(self::XML_PATH_NEWSLETTER_WEBHOOKS_SECRET_KEY, $storeId);
+    }
+
+    /**
+     * @param null $storeId
+     * @return string
+     */
+    public function generateWebhooksSecretKey($storeId = null)
+    {
+        $config = new Mage_Core_Model_Config();
+
+        $secretKey = bin2hex(openssl_random_pseudo_bytes(24));
+
+        if (is_null($storeId) || $storeId == Mage_Core_Model_App::ADMIN_STORE_ID) {
+            $config->saveConfig(self::XML_PATH_NEWSLETTER_WEBHOOKS_SECRET_KEY, $secretKey);
+        }
+        else {
+            $store = Mage::getModel('core/store')->load($storeId);
+            $scopeId = $store->getWebsiteId();
+            $config->saveConfig(self::XML_PATH_NEWSLETTER_WEBHOOKS_SECRET_KEY, $secretKey, 'websites', $scopeId);
+        }
+        $config->cleanCache();
+
+        return $secretKey;
     }
 
     /**
@@ -84,6 +148,7 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function getCustomersContactList($storeId = null)
     {
+        $storeId = is_null($storeId) ? $this->getDefaultStoreId() : $storeId;
         return Mage::getStoreConfig(self::XML_PATH_CUSTOMERS_CONTACT_LIST, $storeId);
     }
 
@@ -93,20 +158,34 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function canAutoSyncCustomers($storeId = null)
     {
-        return Mage::getStoreConfigFlag(self::XML_PATH_CUSTOMERS_AUTOSYNC, $storeId);
+        if (is_null($storeId)) {
+            $storeIds = $this->getStoreIds();
+            if (count($storeIds) > 0) {
+                foreach ($storeIds as $_storeId) {
+                    if (Mage::getStoreConfigFlag(self::XML_PATH_CUSTOMERS_AUTOSYNC, $_storeId)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } else {
+            return Mage::getStoreConfigFlag(self::XML_PATH_CUSTOMERS_AUTOSYNC, $storeId);
+        }
     }
 
     /**
-     * @return MGAPI|null
+     * @param null $storeId
+     * @return MGAPI|mixed
      */
-    public function getMailigenApi()
+    public function getMailigenApi($storeId = null)
     {
-        if (is_null($this->_mgapi)) {
+        $storeId = is_null($storeId) ? $this->getDefaultStoreId() : $storeId;
+        if (!isset($this->_mgapi[$storeId])) {
             require_once Mage::getBaseDir('lib') . '/mailigen/MGAPI.class.php';
-            $this->_mgapi = new MGAPI($this->getApiKey());
+            $this->_mgapi[$storeId] = new MGAPI($this->getApiKey($storeId), false, true);
         }
 
-        return $this->_mgapi;
+        return $this->_mgapi[$storeId];
     }
 
     /**
@@ -160,6 +239,86 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
     }
 
     /**
+     * Get Store ids with enable Mailigen Sync
+     * @return array
+     */
+    public function getStoreIds()
+    {
+        if (is_null($this->_storeIds)) {
+            $this->_storeIds = array();
+            $websites = Mage::app()->getWebsites();
+            foreach ($websites as $_website) {
+                $storeId = $_website->getDefaultGroup()->getDefaultStore()->getId();
+                if ($this->isEnabled($storeId)) {
+                    array_push($this->_storeIds, $storeId);
+                }
+            }
+        }
+
+        return $this->_storeIds;
+    }
+
+    /**
+     * @return array
+     */
+    public function getNewsletterContactLists()
+    {
+        $storesIds = $this->getStoreIds();
+        $result = array();
+        foreach ($storesIds as $_storeId) {
+            $list = $this->getNewsletterContactList($_storeId);
+            if (strlen($list) > 0) {
+                $result[$_storeId] = $list;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return array
+     */
+    public function getCustomerContactLists()
+    {
+        $storesIds = $this->getStoreIds();
+        $result = array();
+        foreach ($storesIds as $_storeId) {
+            $list = $this->getCustomersContactList($_storeId);
+            if (strlen($list) > 0) {
+                $result[$_storeId] = $list;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getDefaultStoreId()
+    {
+        return Mage::app()->getWebsite()->getDefaultGroup()->getDefaultStoreId();
+    }
+
+    /**
+     * @return int
+     */
+    public function getScopeStoreId()
+    {
+        if (strlen($code = Mage::getSingleton('adminhtml/config_data')->getStore())) // store level
+        {
+            return Mage::getModel('core/store')->load($code)->getId();
+        } elseif (strlen($code = Mage::getSingleton('adminhtml/config_data')->getWebsite())) // website level
+        {
+            $website_id = Mage::getModel('core/website')->load($code)->getId();
+            return Mage::app()->getWebsite($website_id)->getDefaultStore()->getId();
+        } else // default level
+        {
+            return Mage_Core_Model_App::ADMIN_STORE_ID;
+        }
+    }
+
+    /**
      * @param      $datetime
      * @param bool $full
      * @return string
@@ -191,5 +350,18 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
 
         if (!$full) $string = array_slice($string, 0, 1);
         return $string ? implode(', ', $string) . ' ago' : 'just now';
+    }
+
+    /**
+     * @param $data
+     * @param $signature
+     * @param null $storeId
+     * @return bool
+     */
+    public function verifySignature($data, $signature, $storeId = null)
+    {
+        $secretKey = $this->getWebhooksSecretKey($storeId);
+        $hash = hash_hmac('sha1', $data, $secretKey);
+        return $signature === 'sha1=' . $hash;
     }
 }
