@@ -15,11 +15,12 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
     const XML_PATH_NEWSLETTER_NEW_LIST_TITLE = 'mailigen_synchronizer/newsletter/new_list_title';
     const XML_PATH_NEWSLETTER_AUTOSYNC = 'mailigen_synchronizer/newsletter/autosync';
     const XML_PATH_NEWSLETTER_HANDLE_DEFAULT_EMAILS = 'mailigen_synchronizer/newsletter/handle_default_emails';
+    const XML_PATH_NEWSLETTER_WEBHOOKS = 'mailigen_synchronizer/newsletter/webhooks';
     const XML_PATH_CUSTOMERS_CONTACT_LIST = 'mailigen_synchronizer/customers/contact_list';
     const XML_PATH_CUSTOMERS_NEW_LIST_TITLE = 'mailigen_synchronizer/customers/new_list_title';
     const XML_PATH_CUSTOMERS_AUTOSYNC = 'mailigen_synchronizer/customers/autosync';
-    const XML_PATH_CUSTOMERS_MANUAL_SYNC = 'mailigen_synchronizer/customers/manual_sync';
-    const XML_PATH_CUSTOMERS_STOP_SYNC = 'mailigen_synchronizer/customers/stop_sync';
+    const XML_PATH_SYNC_MANUAL = 'mailigen_synchronizer/sync/manual';
+    const XML_PATH_SYNC_STOP = 'mailigen_synchronizer/sync/stop';
 
     protected $_mgapi = null;
 
@@ -70,6 +71,15 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
 
     /**
      * @param null $storeId
+     * @return bool
+     */
+    public function enabledWebhooks($storeId = null)
+    {
+        return Mage::getStoreConfigFlag(self::XML_PATH_NEWSLETTER_WEBHOOKS, $storeId);
+    }
+
+    /**
+     * @param null $storeId
      * @return mixed
      */
     public function getCustomersContactList($storeId = null)
@@ -105,7 +115,7 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
     public function setManualSync($start = 1)
     {
         $config = new Mage_Core_Model_Config();
-        $config->saveConfig(self::XML_PATH_CUSTOMERS_MANUAL_SYNC, $start);
+        $config->saveConfig(self::XML_PATH_SYNC_MANUAL, $start);
         $config->cleanCache();
     }
 
@@ -114,7 +124,7 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
      */
     public function getManualSync()
     {
-        return Mage::getStoreConfigFlag(self::XML_PATH_CUSTOMERS_MANUAL_SYNC);
+        return Mage::getStoreConfigFlag(self::XML_PATH_SYNC_MANUAL);
     }
 
     /**
@@ -123,7 +133,7 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
     public function setStopSync($stop = 1)
     {
         $config = new Mage_Core_Model_Config();
-        $config->saveConfig(self::XML_PATH_CUSTOMERS_STOP_SYNC, $stop);
+        $config->saveConfig(self::XML_PATH_SYNC_STOP, $stop);
     }
 
     /**
@@ -135,7 +145,7 @@ class Mailigen_Synchronizer_Helper_Data extends Mage_Core_Helper_Abstract
     {
         /** @var $stopSyncConfigCollection Mage_Core_Model_Resource_Config_Data_Collection */
         $stopSyncConfigCollection = Mage::getModel('core/config_data')->getCollection()
-            ->addFieldToFilter('path', self::XML_PATH_CUSTOMERS_STOP_SYNC);
+            ->addFieldToFilter('path', self::XML_PATH_SYNC_STOP);
 
         if ($stopSyncConfigCollection->getSize()) {
             /** @var $stopSyncConfig Mage_Core_Model_Config_Data */
