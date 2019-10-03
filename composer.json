@@ -1,16 +1,19 @@
 {
-    "name": "OpenMageModuleFostering/Mailigen_Synchronizer",
+    "name": "OpenMageModuleFostering\/Mailigen_Synchronizer",
     "type": "magento-module",
     "license": "GNU-General-Public-License-(GPL)",
     "homepage": "",
     "description": "Two-way sync for Magneto newsletter subscribers and one-way sync for Magnento customers",
     "authors": [
-    {
-        "name": "Thomas Nelson",
-        "email": "info@mailigen.com"
-    }
-],
+        {
+            "name": "Thomas Nelson",
+            "email": "info@mailigen.com"
+        }
+    ],
     "suggest": {
-        "magento-hackathon/magento-composer-installer": "*"
-    }
+        "magento-hackathon\/magento-composer-installer": "*"
+    },
+    "keywords": [
+        "openmage-module"
+    ]
 }
