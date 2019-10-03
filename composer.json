@@ -1,5 +1,5 @@
 {
-    "name": "OpenMageModuleFostering\/Mailigen_Synchronizer",
+    "name": "openmage-module-fostering\/mailigen_synchronizer",
     "type": "magento-module",
     "license": "GNU-General-Public-License-(GPL)",
     "homepage": "",
